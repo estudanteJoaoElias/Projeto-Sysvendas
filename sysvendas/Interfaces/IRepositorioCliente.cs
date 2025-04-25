@@ -5,4 +5,7 @@ public interface IRepositorioCliente
 {
     void Adicionar(Cliente cliente);
     List<Cliente> ObterTodos(); 
+    Cliente? ObterClienteId(int idcliente);
+    Cliente? ObterClienteNome(string nomecliente);
+
 }
