@@ -2,17 +2,22 @@
 
 public class Produto
 {
-    public Produto(string sku, string nome, double precounit, string desc)
+    public int IdProduto { get; set; }      // Será usado como PK no banco (SERIAL / IDENTITY)
+    public string Sku { get; set; } = string.Empty;       // Código identificador único
+    public string Nome { get; set; } = string.Empty;        // Nome do produto
+    public double PrecoUnit { get; set; }   // Preço unitário
+    public string Descricao { get; set; } = string.Empty;        // Descrição (opcional)
+
+    // Construtor vazio necessário para Dapper ou deserialização automática
+    public Produto() { }
+
+    // Construtor para uso em código
+    public Produto(string sku, string nome, double precoUnit, string desc, int idProduto = 0)
     {
+        IdProduto = idProduto;
         Sku = sku;
         Nome = nome;
-        PrecoUnit = precounit;
-        Desc = desc;
+        PrecoUnit = precoUnit;
+        Descricao = desc;
     }
-    
-    public string Sku { get; set; }
-    public string Nome { get; set; }
-    public double PrecoUnit { get; set; }
-    public string Desc { get; set; }
-
 }

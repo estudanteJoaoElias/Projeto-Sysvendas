@@ -5,5 +5,5 @@ public interface IRepositorioProduto
 {
     void Adicionar(Produto produto);
     List<Produto> ObterTodos(); 
-    Produto ObterProduto(string sku);
+    Produto? ObterProduto(string sku);
 }

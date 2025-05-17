@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Threading.Tasks;
 using sysvendas2.Context;
 using sysvendas2.Models;
 
@@ -9,54 +10,49 @@ static class TelaCadastroPedido
     public static void Show()
     {
         Console.Clear(); // Limpa a tela do console
-        Console.OutputEncoding = Encoding.UTF8; // Pra mostrar caracteres especiais certinho
-        ExibeTitulo(); // Mostra o título "Cadastro de Pedido"
+        Console.OutputEncoding = Encoding.UTF8;
+        ExibeTitulo();
 
         Console.WriteLine("\nDigite o ID do pedido:");
-        int.TryParse(Console.ReadLine(), out int idPedido); // Pede o ID do pedido
+        int.TryParse(Console.ReadLine(), out int idPedido);
 
         Console.WriteLine("\nDigite o ID do cliente:");
-        int.TryParse(Console.ReadLine(), out int idCliente); // Pede o ID do cliente
+        int.TryParse(Console.ReadLine(), out int idCliente); 
 
-        // *** Buscando o Cliente ***
-        Cliente cliente = DBContext.RepositorioClientes.ObterClienteId(idCliente); // Busca o cliente no banco de dados (ou lista, etc.)
+        Cliente cliente = DBContext.RepositorioClientes.ObterClienteId(idCliente);
         if (cliente == null)
         {
-            Console.WriteLine($"\nCliente com ID {idCliente} não encontrado!"); // Se não achar o cliente...
+            Console.WriteLine($"\nCliente com ID {idCliente} não encontrado!"); 
             Console.WriteLine("Pressione qualquer tecla para voltar ao menu principal...");
             Console.ReadKey();
-            TelaPrincipal.Show(); // ...volta pro menu principal
+            TelaPrincipal.Show();
             return;
         }
+        DateTime dataPedido = DateTime.Now; 
+        string statusPedido = "Em Aberto";
 
-        DateTime dataPedido = DateTime.Now; // Pega a data de agora
-        string statusPedido = "Em Aberto";  // Status padrão do pedido
+        //Cadastra e retorna o PEDIDO do banco de dados
+        Pedido pedidoDb =   DBContext.RepositorioPedidos.Adicionar(new Pedido(idPedido, dataPedido, cliente, statusPedido));
+        pedidoDb.Items = new List<ItemPedido>();
         
-        // APENAS COLETOU DADOS DO PEDIDO.
-
-        Pedido pedido = new Pedido(idPedido, dataPedido, cliente, statusPedido); // Cria o objeto Pedido
-        pedido.Items = new List<ItemPedido>(); // Inicializa a lista de itens do pedido
-
         bool adicionarMaisItens = true;
-        while (adicionarMaisItens) // Loop pra adicionar vários itens
+        while (adicionarMaisItens) 
         {
-            AdicionarItemAoPedido(pedido); // Adiciona um item ao pedido
-            Console.Write("\nDeseja adicionar mais itens ao pedido? (s/n): ");
-            adicionarMaisItens = Console.ReadLine().ToLower() == "s"; // Pergunta se quer adicionar mais
+            AdicionarItemAoPedido(pedidoDb); 
+            Console.WriteLine("\nDeseja adicionar mais itens ao pedido? (s/n): ");
+            adicionarMaisItens = Console.ReadLine().ToLower() == "s"; 
         }
 
-        // *** Calculando o Total ***
-        pedido.Total = pedido.Items.Sum(item => item.SubTotal); // Calcula o total do pedido somando os subtotais dos itens
-
-        // *** Salvando o Pedido ***
-        DBContext.RepositorioPedidos.Adicionar(pedido); // Salva o pedido no banco de dados (ou lista, etc.)
+       
+        pedidoDb.Total = pedidoDb.Items.Sum(item => item.SubTotal);
+       
 
         Console.WriteLine("\nPedido cadastrado com sucesso!");
-        ExibeResumoPedido(pedido); // Mostra um resumo do pedido
+        ExibeResumoPedido(pedidoDb);
 
-        Console.WriteLine("\nPressione qualquer tecla para voltar ao menu principal...");
+        Console.WriteLine("\nPressione quealquer tecla para voltar ao menu principal...");
         Console.ReadKey();
-        TelaPrincipal.Show(); // Volta pro menu principal
+        TelaPrincipal.Show();
     }
 
     private static void ExibeTitulo()
@@ -70,33 +66,32 @@ static class TelaCadastroPedido
     {
         Console.WriteLine("\n--- Adicionar Item ao Pedido ---");
 
-        Console.Write("Digite o SKU do produto: ");
-        string sku = Console.ReadLine(); // Pede o SKU do produto
-
-        // *** Buscando o Produto ***
-        Produto produto = DBContext.RepositorioProdutos.ObterProduto(sku); // Busca o produto pelo SKU
+        Console.WriteLine("Digite o SKU do produto: ");
+        string sku = Console.ReadLine();
+        Produto produto = DBContext.RepositorioProdutos.ObterProduto(sku);
         if (produto == null)
         {
-            Console.WriteLine($"\nProduto com SKU {sku} não encontrado!");
-            return; // Se não achar, sai da função (você pode querer dar outras opções aqui)
+            Console.WriteLine($"Produto com SKU {sku} não encontrado!");
         }
-
-        Console.Write("Digite a quantidade: ");
-        int.TryParse(Console.ReadLine(), out int quantidade); // Pede a quantidade
-
-        Console.Write("Digite o desconto (%): ");
-        int.TryParse(Console.ReadLine(), out int desconto); // Pede o desconto
-
-        ItemPedido item = new ItemPedido // Cria o objeto ItemPedido
+        else
         {
-            Produto = produto,
-            Quantidade = quantidade,
-            Desconto = desconto,
-            Preco = produto.PrecoUnit,
-            SubTotal = (produto.PrecoUnit * quantidade) * (1 - desconto / 100.0) // Calcula o subtotal
-        };
-
-        pedido.Items.Add(item); // Adiciona o item à lista de itens do pedido
+            Console.WriteLine("Digite a quantidade: ");
+            int.TryParse(Console.ReadLine(), out int quantidade); 
+            Console.WriteLine("Digite o desconto (%): ");
+            int.TryParse(Console.ReadLine(), out int desconto);
+            ItemPedido item = new ItemPedido
+            {
+                Produto = produto,
+                IdProduto = produto.IdProduto,
+                IdPedido  = pedido.IdPedido,
+                Quantidade = quantidade,
+                Desconto = desconto,
+                Preco = produto.PrecoUnit,
+                SubTotal = (produto.PrecoUnit * quantidade) * (1 - desconto / 100.0)
+            };
+            pedido.Items.Add(item);
+            DBContext.RepositorioItemPedidos.Adicionar(item);  
+        }
     }
 
     private static void ExibeResumoPedido(Pedido pedido)

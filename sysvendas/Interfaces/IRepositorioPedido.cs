@@ -1,8 +1,11 @@
-﻿namespace sysvendas2.Interfaces;
-using sysvendas2.Models;
+﻿using sysvendas2.Models;
 
-public interface IRepositorioPedido
+namespace sysvendas2.Interfaces
 {
-    void Adicionar(Pedido pedido);
-    List<Pedido> ObterTodos(); 
+    public interface IRepositorioPedido
+    {
+        void CriarTabelas();
+        Pedido? Adicionar(Pedido pedido);
+        List<Pedido> ObterTodos();
+    }
 }
